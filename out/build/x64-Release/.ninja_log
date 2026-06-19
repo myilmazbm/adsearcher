@@ -1,0 +1,7 @@
+# ninja log v7
+19	106	8035601044910008	CMakeFiles/ITHelper.dir/ITHelper.rc.res	10af4549c3c2de40
+5	802	8035601044759997	CMakeFiles/ITHelper.dir/main.cpp.obj	5d856e7a712232d9
+16	982	8035601044869993	CMakeFiles/ITHelper.dir/AdQueryTool.cpp.obj	fb12dac4d84443b6
+9	996	8035601044799992	CMakeFiles/ITHelper.dir/Shell.cpp.obj	768d259225b7da2e
+12	1323	8035601044839992	CMakeFiles/ITHelper.dir/AdQuery.cpp.obj	dafe89f4fb2cac56
+1324	1638	8035601057953501	ITHelper.exe	fb0ccbc166937d3d
