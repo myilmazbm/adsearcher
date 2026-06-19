@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Program Files \\(x86\\)/Microsoft Visual Studio/Installer/vswhere.exe\" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft Visual Studio/Installer/**)",
+      "PowerShell(Set-Location 'C:\\\\Users\\\\dev\\\\Desktop\\\\ithelperwin'; powershell -NoProfile -ExecutionPolicy Bypass -File .\\\\uia_test.ps1 2>&1 | Out-String)",
+      "PowerShell(Set-Location 'C:\\\\Users\\\\dev\\\\Desktop\\\\ithelperwin'; powershell -NoProfile -ExecutionPolicy Bypass -File .\\\\test_gui.ps1 2>&1 | Out-String)"
+    ]
+  }
+}

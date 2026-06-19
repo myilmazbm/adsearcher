@@ -1,0 +1,94 @@
+ Windows için bir masaüstü aracı yaz: "ITHelper". Active Directory'de kullanıcı, grup ve
+  bilgisayar sorgulayan bir araç. Bunu MODERN C++ ile, SAF WIN32 kullanarak yaz.
+
+  ## Sabit kısıtlar (pazarlık yok)
+  - Tek dosya, bağımsız EXE Harici runtime/redist OLMAYACAK:
+  - Hiçbir GUI framework yok (WinUI/Qt/wxWidgets yok). Saf Win32
+  - C++20, MSVC (cl.exe). Derleyiciyi vswhere + vcvars64 ile bul.
+  - Tüm UI metinleri ve kod yorumları TÜRKÇE.
+
+  ## Mimari (genişletilebilir araç modeli)
+  - `ITool` arayüzü: Name(), Category(), CreateView(parent, font).
+  - `ToolView` arayüzü: SetBounds(rect), Show(bool).
+  - Kabuk (Shell): ana pencere; araçları kategoriye göre sol TreeView'a basar; seçilen aracın
+    görünümünü CACHE'leyerek sağdaki içerik alanında gösterir; WM_SIZE'da yeniden yerleşim.
+  - `ToolRegistry::CreateTools()` araç listesini döndürür (yeni araç = tek push_back).
+  - İlk (ve tek) araç: "AD Sorgusu" (kategori "Active Directory").
+
+  ## AD Sorgusu — işlevsellik
+  - Girişler: nesne tipi (ComboBox: Kullanıcı/Grup/Bilgisayar), ad, opsiyonel domain; "Ara"
+    butonu + Enter ile tetikleme. Domain boşsa mevcut domain (rootDSE/defaultNamingContext).
+  - Bulma: önce tam sAMAccountName eşleşmesi, bulunamazsa wildcard (*ad* / cn / displayName).
+    Filtre değerlerini RFC 4515'e göre KAÇIŞLA (LDAP injection).
+  - Getirilecek bilgiler:
+    - Kullanıcı: görünen ad, sAMAccountName, UPN, e-posta, açıklama, etkin
+      (userAccountControl 0x2 biti), son oturum (lastLogonTimestamp — DC'ler arası replike).
+    - Grup: ad(cn), sAMAccountName, açıklama, kapsam + güvenlik grubu (groupType bitleri).
+    - Bilgisayar: ad, sAMAccountName, açıklama, etkin, son oturum.
+  - Üyelik (ÇOK ÖNEMLİ — şu tuzaklara dikkat et):
+    - "Üyesi olduğu gruplar" ve "üyeler"i nesnenin memberOf/member ÖZELLİĞİNİ OKUYARAK BULMA.
+      Bunun yerine ARAMA kullan:
+      * Üyesi olduğu gruplar: (&(objectCategory=group)(member=<nesneDN>))
+        ARTI birincil grup: objectSid + primaryGroupID'den grup SID'i kurup çözümle
+        (birincil grup, ör. "Domain Users", memberOf'ta HİÇ görünmez).
+      * Grup üyeleri: (|(memberOf=<grupDN>)(primaryGroupID=<RID>))
+        (member özelliği 1500+ üyede aralıklı/;range= döner ve boş kalır; birincil-grup
+         üyeleri member'da yer almaz).
+      İsimleri alfabetik sırala (büyük/küçük harf duyarsız).
+  - Sonuç ekranı: "Bilgiler" (özellik/değer, 2 sütunlu liste), "Üyesi olduğu gruplar",
+    "Üyeler" — nesne tipine göre görünür/gizli. Sorgu sırasında marquee ilerleme çubuğu.
+  - Arama BLOKLAYICI olduğundan ayrı bir worker thread'de çalışsın (kendi COM apartment'ı,
+    COINIT_MULTITHREADED); sonuç PostMessage ile UI thread'ine taşınsın. COM nesnesi
+    thread'ler arası GEÇMESİN — worker yalnız düz veri (struct) döndürsün.
+
+  ## AD Sorgusu — etkileşim
+  - Sonuç listeleri DİKEY KAYDIRILABİLİR olsun. Kaydırmayı ScrollWindowEx + SW_SCROLLCHILDREN
+    ile yap (çocukları tek tek MoveWindow edip invalidate ETME — artefakt bırakır). Fare
+    tekerleği, kaydırma çubuğu ve PageUp/Down çalışsın; büyük listeler kendi içinde de kaysın.
+  - Sağ tık bağlam menüsü:
+    * Bilgiler listesi: "Değeri kopyala" / "Satırı kopyala".
+    * Grup/üye listeleri: "Kopyala".
+    * Ctrl+C ile seçili satır(lar) kopyalanabilsin.
+  - Çapraz arama: Grup/üye listesindeki bir öğeye sağ tık → "Ara". Adı arama kutusuna yazsın,
+    tipini seçip arasın: grup listesi → daima Grup; üye listesi → tipi OTOMATİK tespit et
+    (objectClass'a bak: computer user'dan türediği için "computer" ÖNCE kontrol edilsin →
+    group → user). Bulunan tip combo'ya yansısın. (Bunun için sonuç struct'ında 'type' tut.)
+
+  ## Derleme / paketleme (bunlar olmazsa hata çıkar — atlama)
+  - `/utf-8` derleyici bayrağı ŞART: kaynaklar UTF-8; yoksa Türkçe geniş string literalleri
+    (L"Görünen ad") sistem kod sayfasıyla bozulur.
+  - Manifesti EXE'ye GÖM (/MANIFEST:EMBED + /MANIFESTINPUT). Manifest içeriği: Common Controls
+    v6 bağımlılığı (visual styles) + per-monitor DPI v2 + asInvoker. Yan .manifest dosyası
+    yeterli DEĞİL — tek başına .exe taşınınca arayüz bozulur.
+  - Per-monitor DPI v2 farkındalığı; ölçüleri DPI'ya göre ölçekle (MulDiv); fontu sistem mesaj
+    fontundan (Segoe UI) DPI'ya göre üret.
+  - Sürüm/üretici bilgisi + ikon için .rc (VERSIONINFO: CompanyName/ProductName/FileVersion/
+    FileDescription). Boş meta veri antivirüs sezgisellerini tetikler.
+  - Release: /O1 /Os /GL + /LTCG /OPT:REF /OPT:ICF; /MAP üret (çökme RVA eşleme için).
+  - Tek komutluk `build.ps1` yaz (vswhere → vcvars64 → rc → cl → link). `-DebugBuild` seçeneği
+    olsun. Ayrıca CMakeLists.txt da üret (alternatif).
+
+  ## Sağlamlık / çökme koruması
+  - Tüm pencere yordamlarını ve worker thread'i try/catch ile sar. Pencere yordamından kaçan
+    istisna 0xC000041D (FATAL_USER_CALLBACK_EXCEPTION) ile çökmeye yol açar; bunu yakalayıp
+    okunabilir bir mesaja çevir (uygulama ayakta kalsın).
+  - SetUnhandledExceptionFilter ekle: yakalanmayan hatada kapanmadan önce hata kodu + modül +
+    RVA gösteren bir pencere çıkar (.map ile eşleştirilebilsin).
+
+  ## Kod imzalama
+  - `sign.ps1` yaz: kendinden imzalı kod imzalama sertifikası üret (yoksa), signtool ile
+    SHA256 + RFC3161 zaman damgasıyla imzala, isteğe bağlı açık sertifikayı (.cer) dışa aktar
+    (kurum içi dağıtımda GPO ile Güvenilen Yayıncılar + Güvenilen Kök'e eklenir).
+
+  ## Modern C++ beklentileri
+  - WRL ComPtr; VARIANT/BSTR için RAII sarmalayıcılar; std::optional, std::wstring; ham new/
+    delete'ten kaçın (PostMessage ile taşınan sonuç hariç, o da unique_ptr ile sahiplensin).
+
+  ## Kalite çıtası
+  - Domaine katılı bir makinede GERÇEK AD'ye karşı doğrula: kullanıcı/grup/bilgisayar, "Domain
+    Users" gibi yalnız-birincil-grup üyeleri, bulunamadı durumu, sağ tık kopyala, çapraz arama,
+    yeniden boyutlandırma + kaydırma sonrası bozulma OLMAMASI. Uyarısız (/W4) derlensin.
+  - Sonunda README.md ve ayrıntılı bir PROJE.md üret.
+
+  Önce kısa bir plan çıkar, sonra dosyaları oluştur, derle, gerçek domaine karşı test et ve
+  sonuçları raporla.

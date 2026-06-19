@@ -1,0 +1,47 @@
+// ITHelper.rc — sürüm bilgisi + ikon + gömülü manifest.
+// Boş meta veri AV sezgisellerini tetikler; bu yüzden tüm alanlar doldurulur.
+#include <windows.h>
+#include "resource.h"
+
+// Uygulama ikonu (ilk ikon = EXE temsil ikonu).
+IDI_APPICON ICON "app.ico"
+
+// Manifesti gömmek için /MANIFEST:EMBED + /MANIFESTINPUT kullanılır (build.ps1).
+// Yan .manifest dosyası tek başına taşınınca arayüz bozulur; bu yüzden gömülür.
+
+#define VER_FILE     1,0,0,0
+#define VER_FILE_STR "1.0.0.0"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    VER_FILE
+ PRODUCTVERSION VER_FILE
+ FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS      VS_FF_DEBUG
+#else
+ FILEFLAGS      0x0L
+#endif
+ FILEOS         VOS_NT_WINDOWS32
+ FILETYPE       VFT_APP
+ FILESUBTYPE    VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041F04E6"          // Türkçe (Türkiye), Windows ANSI 1254
+        BEGIN
+            VALUE "CompanyName",      "ITHelper Araclari"
+            VALUE "FileDescription",  "ITHelper - Active Directory Sorgu Araci"
+            VALUE "FileVersion",      VER_FILE_STR
+            VALUE "InternalName",     "ITHelper"
+            VALUE "LegalCopyright",   "Telif Hakki (c) 2026"
+            VALUE "OriginalFilename", "ITHelper.exe"
+            VALUE "ProductName",      "ITHelper"
+            VALUE "ProductVersion",   VER_FILE_STR
+            VALUE "Comments",         "Saf Win32 / C++20 ile yazilmis bagimsiz arac."
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x41F, 1254   // Türkçe, kod sayfası 1254
+    END
+END
