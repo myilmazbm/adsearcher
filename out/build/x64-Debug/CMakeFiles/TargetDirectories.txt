@@ -1,0 +1,3 @@
+C:/Users/myilm/Downloads/it_helper_cpp/out/build/x64-Debug/CMakeFiles/ITHelper.dir
+C:/Users/myilm/Downloads/it_helper_cpp/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/myilm/Downloads/it_helper_cpp/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir

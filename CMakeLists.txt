@@ -21,6 +21,7 @@ add_executable(ITHelper WIN32
     AdQuery.cpp
     AdQueryTool.cpp
     ITHelper.rc
+    app.manifest
 )
 
 target_compile_options(ITHelper PRIVATE
@@ -30,8 +31,6 @@ target_compile_options(ITHelper PRIVATE
 )
 
 target_link_options(ITHelper PRIVATE
-    /MANIFEST:EMBED
-    "/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/app.manifest"
     /MAP:ITHelper.map
     $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT:ICF>
 )
