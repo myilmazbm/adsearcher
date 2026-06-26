@@ -311,12 +311,13 @@ std::unique_ptr<AdResult> RunAdQuery(const AdQueryRequest& req) {
         L"distinguishedName", L"objectClass", L"objectSid", L"primaryGroupID",
         L"sAMAccountName", L"displayName", L"cn", L"name",
         L"userPrincipalName", L"mail", L"description",
+        L"homePhone", L"mobile",
         L"userAccountControl", L"lastLogonTimestamp", L"groupType"
     };
 
     // Bulunan nesnenin ham verileri.
     bool found = false;
-    std::wstring dn, samName, descr, displayName, cn, upn, mail;
+    std::wstring dn, samName, descr, displayName, cn, upn, mail, homePhone, mobile;
     std::vector<std::wstring> classes;
     std::vector<BYTE> sid;
     std::optional<uint32_t> uac, primaryGroupId, groupType;
@@ -334,6 +335,8 @@ std::unique_ptr<AdResult> RunAdQuery(const AdQueryRequest& req) {
         if (auto v = ColStr(ds.Get(), h, L"cn"))             cn = *v;
         if (auto v = ColStr(ds.Get(), h, L"userPrincipalName")) upn = *v;
         if (auto v = ColStr(ds.Get(), h, L"mail"))           mail = *v;
+        if (auto v = ColStr(ds.Get(), h, L"homePhone"))      homePhone = *v;
+        if (auto v = ColStr(ds.Get(), h, L"mobile"))         mobile = *v;
         if (auto v = ColStr(ds.Get(), h, L"description"))    descr = *v;
         uac       = ColInt(ds.Get(), h, L"userAccountControl");
         lastLogon = ColLarge(ds.Get(), h, L"lastLogonTimestamp");
@@ -362,6 +365,8 @@ std::unique_ptr<AdResult> RunAdQuery(const AdQueryRequest& req) {
         info.push_back({ L"Oturum açma adı (sAMAccountName)", ValOr(samName) });
         info.push_back({ L"Kullanıcı asıl adı (UPN)", ValOr(upn) });
         info.push_back({ L"E-posta", ValOr(mail) });
+        info.push_back({ L"Ev telefonu", ValOr(homePhone) });
+        info.push_back({ L"Cep telefonu", ValOr(mobile) });
         info.push_back({ L"Açıklama", ValOr(descr) });
         info.push_back({ L"Etkin", uac ? ((*uac & UAC_ACCOUNTDISABLE) ? L"Hayır" : L"Evet") : L"—" });
         info.push_back({ L"Son oturum (replike)", lastLogon ? FileTime64ToString(*lastLogon) : L"Hiç" });
